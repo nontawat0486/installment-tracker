@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { Installment, CreditCard, PaymentHistoryEntry } from '@/lib/types'
 import { useRouter } from 'next/navigation'
@@ -100,6 +101,10 @@ const EMPTY_FORM = {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   const [installments, setInstallments] = useState<Installment[]>([])
   const [creditCards, setCreditCards]   = useState<CreditCard[]>([])
   const [loading, setLoading]           = useState(true)
@@ -280,21 +285,21 @@ export default function DashboardPage() {
   const paymentOptions = ['เงินสด', ...creditCards.map(c => c.name)]
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
       <div className="text-center space-y-3">
         <div className="w-16 h-16 bg-violet-600 rounded-3xl mx-auto flex items-center justify-center text-3xl animate-pulse shadow-lg">💳</div>
-        <p className="text-slate-500 font-medium">กำลังโหลดข้อมูล...</p>
+        <p className="text-slate-500 dark:text-slate-400 font-medium">กำลังโหลดข้อมูล...</p>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
 
       {/* ── Header ── */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-slate-100">
+      <header className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-20 border-b border-slate-100 dark:border-slate-800">
         <div className="max-w-screen-xl mx-auto px-4 lg:px-8 py-3 flex justify-between items-center gap-3">
-          <span className="text-sm font-bold text-slate-900">ผ่อนชำระ</span>
+          <span className="text-sm font-bold text-slate-900 dark:text-white">ผ่อนชำระ</span>
 
           <div className="flex items-center gap-2">
             {/* Add card button */}
@@ -304,6 +309,27 @@ export default function DashboardPage() {
             >
               💳 <span className="text-xs font-semibold">เพิ่มบัตร</span>
             </button>
+
+            {/* Dark mode toggle */}
+            {mounted && (
+              <button
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                className="btn-ghost w-9 h-9 flex items-center justify-center rounded-xl"
+                title={resolvedTheme === 'dark' ? 'สลับเป็น Light Mode' : 'สลับเป็น Dark Mode'}
+              >
+                {resolvedTheme === 'dark' ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                  </svg>
+                )}
+              </button>
+            )}
 
             {/* User avatar + dropdown */}
             <div className="relative" ref={dropdownRef}>
@@ -317,15 +343,15 @@ export default function DashboardPage() {
               </button>
 
               {showDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 overflow-hidden animate-pop z-30">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-xl ring-1 ring-slate-100 dark:ring-slate-700 overflow-hidden animate-pop z-30">
                   {/* User info */}
-                  <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
                         {userEmail[0]?.toUpperCase() ?? '?'}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-slate-700 truncate">{userEmail}</p>
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{userEmail}</p>
                         <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
                           userRole === 'admin' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'
                         }`}>
@@ -370,11 +396,13 @@ export default function DashboardPage() {
         {alertItems.length > 0 && (
           <div className="mb-4 animate-in">
             <div className={`rounded-2xl px-4 py-3 flex items-start gap-3 ${
-              overdueItems.length > 0 ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'
+              overdueItems.length > 0
+                ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
             }`}>
               <span className="text-lg shrink-0 mt-0.5">{overdueItems.length > 0 ? '🚨' : '⏰'}</span>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-bold ${overdueItems.length > 0 ? 'text-red-700' : 'text-amber-700'}`}>
+                <p className={`text-sm font-bold ${overdueItems.length > 0 ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'}`}>
                   {overdueItems.length > 0
                     ? `มี ${overdueItems.length} รายการเลยกำหนดชำระแล้ว!`
                     : `มี ${alertItems.length} รายการใกล้ถึงวันชำระ (ภายใน 7 วัน)`}
@@ -557,8 +585,8 @@ export default function DashboardPage() {
         <section className="animate-in" style={{ animationDelay: '0.05s' }}>
           <div className="flex justify-between items-center mb-3">
             <div>
-              <h2 className="text-base font-bold text-slate-800">รายการกำลังผ่อน</h2>
-              <p className="text-xs text-slate-400">{active.length} รายการ</p>
+              <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">รายการกำลังผ่อน</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500">{active.length} รายการ</p>
             </div>
             <button onClick={openAddModal} className="btn-primary flex items-center gap-1.5 px-4 py-2.5 text-sm">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -571,8 +599,8 @@ export default function DashboardPage() {
           {active.length === 0 ? (
             <div className="card p-12 text-center animate-in">
               <div className="w-16 h-16 bg-slate-100 rounded-3xl mx-auto flex items-center justify-center text-3xl mb-4">📦</div>
-              <p className="font-semibold text-slate-700 mb-1">ยังไม่มีรายการผ่อนชำระ</p>
-              <p className="text-slate-400 text-sm mb-5">กดปุ่มเพิ่มรายการเพื่อเริ่มบันทึก</p>
+              <p className="font-semibold text-slate-700 dark:text-slate-200 mb-1">ยังไม่มีรายการผ่อนชำระ</p>
+              <p className="text-slate-400 dark:text-slate-500 text-sm mb-5">กดปุ่มเพิ่มรายการเพื่อเริ่มบันทึก</p>
               <button onClick={openAddModal} className="btn-primary px-6 py-2.5 text-sm mx-auto">
                 เพิ่มรายการแรก
               </button>
@@ -600,7 +628,7 @@ export default function DashboardPage() {
               onClick={() => setShowCompleted(v => !v)}
               className="flex items-center gap-2 w-full text-left mb-3 group"
             >
-              <span className="text-sm font-bold text-slate-400 group-hover:text-slate-600 transition-colors">
+              <span className="text-sm font-bold text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 transition-colors">
                 ผ่อนชำระเสร็จสิ้น
               </span>
               <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">
@@ -614,10 +642,10 @@ export default function DashboardPage() {
                 {completed.map(item => (
                   <div key={item.id} className="card p-4 opacity-60 flex items-center justify-between gap-3 animate-in">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center text-sm shrink-0">✅</div>
+                      <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-sm shrink-0">✅</div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-slate-700 truncate text-sm">{item.product_name}</p>
-                        <p className="text-xs text-slate-400">{item.payment_method} · {item.total_installments} งวด · {fmt(item.full_price)}</p>
+                        <p className="font-semibold text-slate-700 dark:text-slate-200 truncate text-sm">{item.product_name}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">{item.payment_method} · {item.total_installments} งวด · {fmt(item.full_price)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -776,10 +804,10 @@ export default function DashboardPage() {
                     const pct       = Math.round((item.current_installment / item.total_installments) * 100)
                     return (
                       <div key={item.id}
-                        className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 transition-colors group">
+                        className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
                         {/* Platform icon */}
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                          isUrgent ? 'bg-amber-100' : 'bg-slate-100 group-hover:bg-slate-200'
+                          isUrgent ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-slate-100 dark:bg-slate-700 group-hover:bg-slate-200 dark:group-hover:bg-slate-600'
                         }`}>
                           {PLATFORM_LOGO[item.platform] ? (
                             <img src={PLATFORM_LOGO[item.platform]} alt=""
@@ -790,7 +818,7 @@ export default function DashboardPage() {
                         </div>
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-slate-800 truncate">{item.product_name}</p>
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{item.product_name}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
                               <div className={`h-full rounded-full ${isUrgent ? 'bg-amber-400' : 'bg-violet-400'}`}
@@ -998,8 +1026,8 @@ export default function DashboardPage() {
       {showSettingsModal && (
         <Modal title="จัดการบัตรเครดิต" onClose={() => setShowSettingsModal(false)}>
           <div className="space-y-4">
-            <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">เพิ่มบัตรใหม่</p>
+            <div className="bg-slate-50 dark:bg-slate-900/40 rounded-2xl p-4 space-y-3">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">เพิ่มบัตรใหม่</p>
               <div>
                 <label className="label">ชื่อบัตร *</label>
                 <input type="text" value={newCard.name} className="input"
@@ -1024,12 +1052,12 @@ export default function DashboardPage() {
                   <div className="text-3xl mb-2">💳</div>ยังไม่มีบัตรเครดิต
                 </div>
               ) : creditCards.map(card => (
-                <div key={card.id} className="flex items-start justify-between gap-3 p-3.5 bg-slate-50 rounded-2xl">
+                <div key={card.id} className="flex items-start justify-between gap-3 p-3.5 bg-slate-50 dark:bg-slate-700/40 rounded-2xl">
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="w-8 h-8 bg-white shadow-sm rounded-xl flex items-center justify-center text-sm shrink-0">💳</div>
+                    <div className="w-8 h-8 bg-white dark:bg-slate-600 shadow-sm rounded-xl flex items-center justify-center text-sm shrink-0">💳</div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-800 text-sm">{card.name}</p>
-                      {card.description && <p className="text-xs text-slate-400 truncate mt-0.5">{card.description}</p>}
+                      <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{card.name}</p>
+                      {card.description && <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">{card.description}</p>}
                     </div>
                   </div>
                   <button onClick={() => handleDeleteCard(card.id)}
@@ -1046,11 +1074,11 @@ export default function DashboardPage() {
       {/* ── Pay Confirmation Modal ── */}
       {payConfirmItem && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-pop">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-pop">
             <div className="text-center mb-5">
-              <div className="w-14 h-14 bg-violet-100 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-3">✅</div>
-              <h3 className="font-bold text-slate-900 text-lg">ยืนยันการชำระเงิน?</h3>
-              <p className="text-slate-500 text-sm mt-2 leading-relaxed">
+              <div className="w-14 h-14 bg-violet-100 dark:bg-violet-900/40 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-3">✅</div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-lg">ยืนยันการชำระเงิน?</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-2 leading-relaxed">
                 <span className="font-semibold text-slate-700">{payConfirmItem.product_name}</span>
                 <br />
                 งวดที่ <span className="font-bold text-violet-600">{payConfirmItem.current_installment + 1}</span>
@@ -1074,11 +1102,11 @@ export default function DashboardPage() {
       {/* ── Delete Confirmation Modal ── */}
       {deleteConfirmId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-pop">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-pop">
             <div className="text-center mb-5">
-              <div className="w-14 h-14 bg-red-100 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-3">🗑️</div>
-              <h3 className="font-bold text-slate-900 text-lg">ยืนยันการลบ?</h3>
-              <p className="text-slate-500 text-sm mt-1">ข้อมูลจะถูกลบถาวร ไม่สามารถกู้คืนได้</p>
+              <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-3">🗑️</div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-lg">ยืนยันการลบ?</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">ข้อมูลจะถูกลบถาวร ไม่สามารถกู้คืนได้</p>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirmId(null)} className="btn-ghost flex-1 py-3 border border-slate-200">ยกเลิก</button>
@@ -1126,7 +1154,7 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
     })
 
   return (
-    <div className={`bg-white rounded-3xl shadow-sm ring-1 ring-slate-100 overflow-hidden border-l-4 ${cfg.accent}`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-slate-700 overflow-hidden border-l-4 ${cfg.accent}`}>
       <div className="p-4">
 
         {/* ── Top row ── */}
@@ -1139,7 +1167,7 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
                 {logoSrc && <img src={logoSrc} alt={item.platform} className="w-3.5 h-3.5 object-contain rounded-sm" />}
                 {item.platform}
               </span>
-              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              <span className="text-xs text-slate-400 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
                 {item.payment_method}
               </span>
               {item.due_day != null && <DueBadge dueDay={item.due_day} />}
@@ -1151,7 +1179,7 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
                 <img src={logoSrc} alt={item.platform}
                   className="w-7 h-7 object-contain rounded-lg shrink-0 opacity-90 shadow-sm" />
               )}
-              <p className="font-bold text-slate-900 text-base truncate leading-snug">
+              <p className="font-bold text-slate-900 dark:text-white text-base truncate leading-snug">
                 {item.product_name}
               </p>
             </div>
@@ -1163,7 +1191,7 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
 
           {/* Monthly amount */}
           <div className="text-right shrink-0">
-            <p className="text-2xl font-extrabold text-slate-900 leading-none">{fmt(item.monthly_payment)}</p>
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white leading-none">{fmt(item.monthly_payment)}</p>
             <p className="text-xs text-slate-400 mt-1">/เดือน</p>
           </div>
         </div>
@@ -1171,21 +1199,21 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
         {/* ── Progress ── */}
         <div className="mb-4">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="text-slate-500">
-              งวดที่ <span className="font-bold text-slate-700">{item.current_installment}</span> / {item.total_installments}
+            <span className="text-slate-500 dark:text-slate-400">
+              งวดที่ <span className="font-bold text-slate-700 dark:text-slate-200">{item.current_installment}</span> / {item.total_installments}
             </span>
             <span className={`font-semibold ${isAlmostDone ? 'text-amber-500' : 'text-slate-400'}`}>
               {isAlmostDone && '⚡ '}เหลืออีก {remaining} งวด
             </span>
           </div>
-          <div className="h-2.5 bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
             <div className={`h-full ${cfg.barColor} rounded-full transition-all duration-700 ease-out`}
               style={{ width: `${progress}%` }} />
           </div>
           <div className="flex justify-between items-center mt-1.5">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-slate-400">ยอดคงเหลือ</span>
-              <span className={`text-xs font-bold ${isAlmostDone ? 'text-amber-600' : 'text-slate-700'}`}>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">ยอดคงเหลือ</span>
+              <span className={`text-xs font-bold ${isAlmostDone ? 'text-amber-600' : 'text-slate-700 dark:text-slate-200'}`}>
                 {fmt(remainingBalance)}
               </span>
             </div>
@@ -1203,7 +1231,7 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
             จ่ายแล้ว (+1 งวด)
           </button>
           <button onClick={onEdit}
-            className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-2xl transition-all text-sm">
+            className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-2xl transition-all text-sm">
             ✏️
           </button>
           <button onClick={onDeleteRequest}
@@ -1214,10 +1242,10 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
       </div>
 
       {/* ── Payment History Accordion ── */}
-      <div className="border-t border-slate-100">
+      <div className="border-t border-slate-100 dark:border-slate-700">
         <button
           onClick={() => setShowHistory(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
         >
           <span className="flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1245,14 +1273,14 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
             ) : (
               history.map((entry, i) => (
                 <div key={i}
-                  className="flex items-center justify-between bg-slate-50 rounded-2xl px-3 py-2"
+                  className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 rounded-2xl px-3 py-2"
                   style={{ animationDelay: `${i * 0.03}s` }}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ${cfg.barColor}`}>
                       {entry.installmentNo}
                     </div>
-                    <span className="text-xs font-semibold text-slate-700">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                       งวดที่ {entry.installmentNo}
                     </span>
                   </div>
@@ -1271,11 +1299,11 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl animate-in">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-3xl sm:rounded-t-3xl z-10">
-          <h3 className="font-bold text-slate-900 text-base">{title}</h3>
+      <div className="bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto shadow-2xl animate-in">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-t-3xl z-10">
+          <h3 className="font-bold text-slate-900 dark:text-white text-base">{title}</h3>
           <button onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors text-xl leading-none">
+            className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-xl leading-none">
             ×
           </button>
         </div>

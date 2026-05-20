@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-8 items-center">
 
         {/* Left — Brand */}
@@ -47,7 +47,7 @@ export default function LoginPage() {
             <div className="w-14 h-14 bg-violet-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg mb-6">
               💳
             </div>
-            <h1 className="text-4xl font-extrabold text-slate-900 leading-tight">
+            <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white leading-tight">
               จัดการผ่อนชำระ<br />
               <span className="text-violet-600">ให้ง่ายขึ้น</span>
             </h1>
@@ -117,7 +117,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-2xl animate-pop">
+              <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm p-3 rounded-2xl animate-pop">
                 <span>⚠️</span> {error}
               </div>
             )}

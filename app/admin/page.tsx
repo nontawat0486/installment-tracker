@@ -104,7 +104,7 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-2xl mx-auto animate-pulse">
             👥
@@ -116,9 +116,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-slate-100 shadow-sm">
+      <header className="bg-white/80 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-20 border-b border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3.5 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Link

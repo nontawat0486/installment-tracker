@@ -48,7 +48,7 @@ export default function SignupPage() {
   const strengthColor = ['', 'bg-red-400', 'bg-amber-400', 'bg-emerald-500']
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-in">
         <div className="text-center mb-8">
           <div className="w-14 h-14 bg-violet-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg mx-auto mb-4">
@@ -113,7 +113,7 @@ export default function SignupPage() {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm p-3 rounded-2xl animate-pop">
+              <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm p-3 rounded-2xl animate-pop">
                 <span>⚠️</span> {error}
               </div>
             )}
