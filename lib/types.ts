@@ -1,0 +1,31 @@
+export interface Profile {
+  id: string
+  email: string
+  display_name: string
+  role: 'user' | 'admin'
+  created_at: string
+  updated_at: string
+}
+
+export interface CreditCard {
+  id: string
+  user_id: string
+  name: string
+  description: string
+  created_at: string
+}
+
+export interface Installment {
+  id: string
+  user_id: string
+  product_name: string
+  full_price: number
+  monthly_payment: number
+  total_installments: number
+  current_installment: number
+  payment_method: string
+  platform: string
+  is_completed: boolean
+  created_at: string
+  updated_at: string
+}
