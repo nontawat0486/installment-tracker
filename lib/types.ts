@@ -15,6 +15,11 @@ export interface CreditCard {
   created_at: string
 }
 
+export interface PaymentHistoryEntry {
+  installmentNo: number
+  paidAt: string   // ISO timestamp
+}
+
 export interface Installment {
   id: string
   user_id: string
@@ -26,6 +31,7 @@ export interface Installment {
   payment_method: string
   platform: string
   is_completed: boolean
+  payment_history: PaymentHistoryEntry[]
   created_at: string
   updated_at: string
 }
