@@ -142,6 +142,53 @@ await supabase.from('installments').update({ payment_history: updatedHistory }).
 
 ---
 
+## Known Issues & Quick Fixes
+
+### 🔴 หน้าขาว / White Page (ไม่สามารถเข้าแอปได้)
+
+**Root cause:** `.next` cache เก่าค้างอยู่ ทำให้ dev server start ไม่สมบูรณ์  
+**Symptoms:** `npm run dev` แสดงแค่ `▲ Next.js 14.x.x` แล้วหยุด / exit code 255 / port ไม่ขึ้น  
+**Fix — ทำตามลำดับ:**
+```powershell
+# 1. ฆ่า process ที่ค้างอยู่บน port 3000 (ถ้ามี)
+netstat -ano | findstr ":3000 " | findstr LISTENING
+# จด PID แล้วรัน:
+Stop-Process -Id <PID> -Force
+
+# 2. ลบ .next cache
+cd "D:\Cluade\Demo_1"
+Remove-Item -Path ".next" -Recurse -Force
+
+# 3. Start server ใหม่
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+npx next dev
+```
+**หมายเหตุ:** `npm run build` ผ่านไม่ได้แปลว่า dev server จะ start ได้เสมอ — cache เก่าทำให้ dev mode พัง แต่ production build ไม่พัง
+
+---
+
+### 🔴 JSX Rendering Pattern — ห้ามใช้ IIFE ใน JSX
+
+**Root cause:** Pattern `{condition && (() => { ... })()}` ใน JSX ทำให้ React render ไม่ได้ในบางกรณี  
+**Fix:** ใช้ helper component แทนเสมอ  
+```tsx
+// ❌ อย่าทำ
+{item.due_day != null && (() => {
+  const x = compute(item.due_day!)
+  return <span>{x.label}</span>
+})()}
+
+// ✅ ทำแบบนี้แทน
+function MyBadge({ value }: { value: number }) {
+  const x = compute(value)
+  return <span>{x.label}</span>
+}
+// แล้วใช้:
+{item.due_day != null && <MyBadge value={item.due_day} />}
+```
+
+---
+
 ## Workflow Rules (Learned from Session)
 
 ### File Editing
