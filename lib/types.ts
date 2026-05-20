@@ -32,6 +32,7 @@ export interface Installment {
   platform: string
   is_completed: boolean
   payment_history: PaymentHistoryEntry[]
+  due_day: number | null
   created_at: string
   updated_at: string
 }

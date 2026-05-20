@@ -39,10 +39,38 @@ const PLATFORM_CHART_COLOR: Record<string, string> = {
   'ทั่วไป':     '#94A3B8',
 }
 
+// ── Due date helpers ──────────────────────────────────
+function getNextDueDate(dueDay: number): Date {
+  const today = new Date()
+  const y = today.getFullYear(), m = today.getMonth(), d = today.getDate()
+  const daysInThisMonth = new Date(y, m + 1, 0).getDate()
+  const effectiveThis  = Math.min(dueDay, daysInThisMonth)
+  if (d <= effectiveThis) return new Date(y, m, effectiveThis)
+  const daysInNext = new Date(y, m + 2, 0).getDate()
+  return new Date(y, m + 1, Math.min(dueDay, daysInNext))
+}
+
+function getDaysUntilDue(dueDay: number): number {
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const next  = getNextDueDate(dueDay); next.setHours(0, 0, 0, 0)
+  return Math.round((next.getTime() - today.getTime()) / 86400000)
+}
+
+function getDueLabel(dueDay: number) {
+  const days = getDaysUntilDue(dueDay)
+  if (days < 0)   return { label: `เลยกำหนด ${Math.abs(days)} วัน`, color: 'text-red-600',    bg: 'bg-red-100',    dot: 'bg-red-500'    }
+  if (days === 0) return { label: 'วันนี้!',                          color: 'text-red-600',    bg: 'bg-red-100',    dot: 'bg-red-500'    }
+  if (days <= 3)  return { label: `อีก ${days} วัน`,                  color: 'text-orange-600', bg: 'bg-orange-100', dot: 'bg-orange-500' }
+  if (days <= 7)  return { label: `อีก ${days} วัน`,                  color: 'text-amber-600',  bg: 'bg-amber-100',  dot: 'bg-amber-400'  }
+  return           { label: `ทุกวันที่ ${dueDay}`,                    color: 'text-slate-500',  bg: 'bg-slate-100',  dot: 'bg-slate-400'  }
+}
+// ─────────────────────────────────────────────────────
+
 const EMPTY_FORM = {
   product_name: '', full_price: '', monthly_payment: '',
   total_installments: '', current_installment: '0',
   payment_method: 'เงินสด', platform: 'ทั่วไป',
+  due_day: '',
 }
 
 export default function DashboardPage() {
@@ -129,6 +157,7 @@ export default function DashboardPage() {
       total_installments: item.total_installments.toString(),
       current_installment: item.current_installment.toString(),
       payment_method: item.payment_method, platform: item.platform,
+      due_day: item.due_day?.toString() ?? '',
     })
     setShowInstallmentModal(true)
   }
@@ -147,6 +176,7 @@ export default function DashboardPage() {
       total_installments: tot, current_installment: cur,
       payment_method: form.payment_method, platform: form.platform,
       is_completed: cur >= tot,
+      due_day: parseInt(form.due_day) || null,
     }
     if (editingInstallment)
       await sb.from('installments').update(payload).eq('id', editingInstallment.id)
@@ -217,6 +247,10 @@ export default function DashboardPage() {
 
   const byPlatform: Record<string, number> = {}
   active.forEach(i => { byPlatform[i.platform] = (byPlatform[i.platform] || 0) + i.monthly_payment })
+
+  const totalRemaining = active.reduce((s, i) => s + (i.total_installments - i.current_installment) * i.monthly_payment, 0)
+  const alertItems  = active.filter(i => i.due_day != null && getDaysUntilDue(i.due_day!) <= 7)
+  const overdueItems = active.filter(i => i.due_day != null && getDaysUntilDue(i.due_day!) < 0)
 
   const paymentOptions = ['เงินสด', ...creditCards.map(c => c.name)]
 
@@ -306,6 +340,37 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-screen-xl mx-auto px-4 lg:px-8 py-5 pb-24">
+
+        {/* ── Due-Date Alert Banner ── */}
+        {alertItems.length > 0 && (
+          <div className="mb-4 animate-in">
+            <div className={`rounded-2xl px-4 py-3 flex items-start gap-3 ${
+              overdueItems.length > 0 ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'
+            }`}>
+              <span className="text-lg shrink-0 mt-0.5">{overdueItems.length > 0 ? '🚨' : '⏰'}</span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold ${overdueItems.length > 0 ? 'text-red-700' : 'text-amber-700'}`}>
+                  {overdueItems.length > 0
+                    ? `มี ${overdueItems.length} รายการเลยกำหนดชำระแล้ว!`
+                    : `มี ${alertItems.length} รายการใกล้ถึงวันชำระ (ภายใน 7 วัน)`}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {alertItems.map(item => {
+                    const due = getDueLabel(item.due_day!)
+                    return (
+                      <span key={item.id}
+                        className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${due.bg} ${due.color}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${due.dot}`} />
+                        {item.product_name} · {due.label}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="lg:grid lg:grid-cols-3 lg:gap-6 lg:items-start">
 
         {/* ══════════ LEFT COLUMN (2/3) ══════════ */}
@@ -318,10 +383,23 @@ export default function DashboardPage() {
             <div className="absolute -bottom-10 -left-6 w-32 h-32 bg-white/5 rounded-full" />
             <p className="text-violet-200 text-sm font-medium">ยอดรวมที่ต้องจ่ายเดือนนี้</p>
             <p className="text-5xl font-extrabold mt-1 tracking-tight">{fmt(totalMonthly)}</p>
-            <div className="flex items-center gap-4 mt-4">
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-px flex-1 bg-white/10" />
+              <div className="text-center">
+                <p className="text-violet-200 text-[11px]">ยอดคงเหลือทั้งหมด</p>
+                <p className="text-xl font-bold text-white leading-tight">{fmt(totalRemaining)}</p>
+              </div>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+            <div className="flex items-center gap-3 mt-3 flex-wrap">
               <div className="bg-white/10 rounded-xl px-3 py-1.5 text-xs font-medium">
                 📦 {active.length} รายการที่กำลังผ่อน
               </div>
+              {overdueItems.length > 0 && (
+                <div className="bg-red-500/80 rounded-xl px-3 py-1.5 text-xs font-bold text-white animate-pulse">
+                  ⚠️ เลยกำหนด {overdueItems.length} รายการ
+                </div>
+              )}
               {completed.length > 0 && (
                 <div className="bg-white/10 rounded-xl px-3 py-1.5 text-xs font-medium">
                   ✅ {completed.length} รายการเสร็จแล้ว
@@ -650,21 +728,25 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-800">รายการที่ต้องจ่ายถัดไป</h3>
-                <p className="text-xs text-slate-400">เรียงตามงวดที่เหลือน้อยสุด</p>
+                <p className="text-xs text-slate-400">เรียงตามวันครบกำหนด</p>
               </div>
             </div>
 
             {active.length > 0 ? (
               <div className="space-y-1">
                 {[...active]
-                  .sort((a, b) =>
-                    (a.total_installments - a.current_installment) -
-                    (b.total_installments - b.current_installment)
-                  )
+                  .sort((a, b) => {
+                    // Items with a due_day come first, sorted by days until due
+                    const aDays = a.due_day != null ? getDaysUntilDue(a.due_day) : 9999
+                    const bDays = b.due_day != null ? getDaysUntilDue(b.due_day) : 9999
+                    if (aDays !== bDays) return aDays - bDays
+                    // Tiebreak: fewest installments remaining
+                    return (a.total_installments - a.current_installment) - (b.total_installments - b.current_installment)
+                  })
                   .slice(0, 6)
                   .map((item) => {
                     const remaining = item.total_installments - item.current_installment
-                    const isUrgent  = remaining <= 3
+                    const isUrgent  = remaining <= 3 || (item.due_day != null && getDaysUntilDue(item.due_day!) <= 3)
                     const pct       = Math.round((item.current_installment / item.total_installments) * 100)
                     return (
                       <div key={item.id}
@@ -696,7 +778,14 @@ export default function DashboardPage() {
                         {/* Amount */}
                         <div className="text-right shrink-0">
                           <p className="text-xs font-bold text-slate-700">{fmt(item.monthly_payment)}</p>
-                          {isUrgent && <span className="text-[10px] text-amber-500 font-bold">⚡ ใกล้หมด</span>}
+                          {item.due_day != null ? (
+                            (() => {
+                              const due = getDueLabel(item.due_day!)
+                              return <span className={`text-[10px] font-bold ${due.color}`}>{due.label}</span>
+                            })()
+                          ) : (
+                            isUrgent && <span className="text-[10px] text-amber-500 font-bold">⚡ ใกล้หมด</span>
+                          )}
                         </div>
                       </div>
                     )
@@ -825,6 +914,23 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+            </div>
+            <div>
+              <label className="label">วันครบกำหนดชำระ (ทุกเดือน)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number" inputMode="numeric" min="1" max="31"
+                  value={form.due_day}
+                  onChange={e => setForm(f => ({ ...f, due_day: e.target.value }))}
+                  className="input w-28 text-center text-lg font-bold"
+                  placeholder="วันที่"
+                />
+                <span className="text-sm text-slate-500">
+                  {form.due_day
+                    ? (() => { const d = getDueLabel(parseInt(form.due_day)); return <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${d.bg} ${d.color}`}><span className={`w-1.5 h-1.5 rounded-full ${d.dot}`}/>{d.label}</span> })()
+                    : <span className="text-slate-400 text-xs">ไม่ระบุ — ข้ามช่องนี้ได้</span>}
+                </span>
+              </div>
             </div>
             <div>
               <label className="label">แพลตฟอร์มที่ซื้อ</label>
@@ -1013,6 +1119,15 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
               <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
                 {item.payment_method}
               </span>
+              {item.due_day != null && (() => {
+                const due = getDueLabel(item.due_day!)
+                return (
+                  <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${due.bg} ${due.color}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${due.dot}`} />
+                    {due.label}
+                  </span>
+                )
+              })()}
             </div>
 
             {/* Product name with platform logo watermark */}
