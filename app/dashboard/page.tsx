@@ -66,6 +66,31 @@ function getDueLabel(dueDay: number) {
 }
 // ─────────────────────────────────────────────────────
 
+function DueBadge({ dueDay, size = 'sm' }: { dueDay: number; size?: 'sm' | 'xs' }) {
+  const due = getDueLabel(dueDay)
+  if (size === 'xs') {
+    return (
+      <span className={`text-[10px] font-bold ${due.color}`}>{due.label}</span>
+    )
+  }
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${due.bg} ${due.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${due.dot}`} />
+      {due.label}
+    </span>
+  )
+}
+
+function DueBadgePill({ dueDay }: { dueDay: number }) {
+  const due = getDueLabel(dueDay)
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${due.bg} ${due.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${due.dot}`} />
+      {due.label}
+    </span>
+  )
+}
+
 const EMPTY_FORM = {
   product_name: '', full_price: '', monthly_payment: '',
   total_installments: '', current_installment: '0',
@@ -356,7 +381,8 @@ export default function DashboardPage() {
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   {alertItems.map(item => {
-                    const due = getDueLabel(item.due_day!)
+                    const due = item.due_day != null ? getDueLabel(item.due_day) : null
+                    if (!due) return null
                     return (
                       <span key={item.id}
                         className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${due.bg} ${due.color}`}>
@@ -778,14 +804,10 @@ export default function DashboardPage() {
                         {/* Amount */}
                         <div className="text-right shrink-0">
                           <p className="text-xs font-bold text-slate-700">{fmt(item.monthly_payment)}</p>
-                          {item.due_day != null ? (
-                            (() => {
-                              const due = getDueLabel(item.due_day!)
-                              return <span className={`text-[10px] font-bold ${due.color}`}>{due.label}</span>
-                            })()
-                          ) : (
-                            isUrgent && <span className="text-[10px] text-amber-500 font-bold">⚡ ใกล้หมด</span>
-                          )}
+                          {item.due_day != null
+                            ? <DueBadge dueDay={item.due_day} size="xs" />
+                            : isUrgent && <span className="text-[10px] text-amber-500 font-bold">⚡ ใกล้หมด</span>
+                          }
                         </div>
                       </div>
                     )
@@ -926,8 +948,8 @@ export default function DashboardPage() {
                   placeholder="วันที่"
                 />
                 <span className="text-sm text-slate-500">
-                  {form.due_day
-                    ? (() => { const d = getDueLabel(parseInt(form.due_day)); return <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${d.bg} ${d.color}`}><span className={`w-1.5 h-1.5 rounded-full ${d.dot}`}/>{d.label}</span> })()
+                  {form.due_day && parseInt(form.due_day) >= 1 && parseInt(form.due_day) <= 31
+                    ? <DueBadgePill dueDay={parseInt(form.due_day)} />
                     : <span className="text-slate-400 text-xs">ไม่ระบุ — ข้ามช่องนี้ได้</span>}
                 </span>
               </div>
@@ -1119,15 +1141,7 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
               <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
                 {item.payment_method}
               </span>
-              {item.due_day != null && (() => {
-                const due = getDueLabel(item.due_day!)
-                return (
-                  <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${due.bg} ${due.color}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${due.dot}`} />
-                    {due.label}
-                  </span>
-                )
-              })()}
+              {item.due_day != null && <DueBadge dueDay={item.due_day} />}
             </div>
 
             {/* Product name with platform logo watermark */}
