@@ -1114,8 +1114,9 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
   const cfg       = PLATFORM_CONFIG[item.platform] ?? PLATFORM_CONFIG['ทั่วไป']
   const logoSrc   = PLATFORM_LOGO[item.platform]
   const progress  = item.total_installments > 0 ? Math.min((item.current_installment / item.total_installments) * 100, 100) : 0
-  const remaining = item.total_installments - item.current_installment
-  const isAlmostDone = remaining <= 3 && remaining > 0
+  const remaining        = item.total_installments - item.current_installment
+  const remainingBalance = remaining * item.monthly_payment
+  const isAlmostDone     = remaining <= 3 && remaining > 0
   const history   = [...(item.payment_history ?? [])].reverse() // newest first
 
   const fmtDate = (iso: string) =>
@@ -1181,7 +1182,15 @@ function InstallmentCard({ item, onPayRequest, onEdit, onDeleteRequest }: {
             <div className={`h-full ${cfg.barColor} rounded-full transition-all duration-700 ease-out`}
               style={{ width: `${progress}%` }} />
           </div>
-          <p className="text-right text-xs font-semibold text-slate-500 mt-1">{Math.round(progress)}%</p>
+          <div className="flex justify-between items-center mt-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-400">ยอดคงเหลือ</span>
+              <span className={`text-xs font-bold ${isAlmostDone ? 'text-amber-600' : 'text-slate-700'}`}>
+                {fmt(remainingBalance)}
+              </span>
+            </div>
+            <span className="text-xs font-semibold text-slate-400">{Math.round(progress)}%</span>
+          </div>
         </div>
 
         {/* ── Actions ── */}
